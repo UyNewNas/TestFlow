@@ -147,6 +147,7 @@ vite.config.ts.timestamp-*
 docs/
 .gitignore
 /.claude
+/TestFlow1.0图标.png
 
 # ── vscode & editors ──
 .vscode/
