@@ -561,10 +561,11 @@ function App() {
           </button>
         </div>
 
-        <StatsBar />
-
         <div className="canvas-wrapper">
-          <ContextViewer />
+          <div className="sidebar-left">
+            <StatsBar />
+            <ContextViewer />
+          </div>
           <div className="canvas-area">
             <ReactFlow
               nodes={nodes}

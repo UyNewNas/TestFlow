@@ -52,53 +52,56 @@ export default function StatsBar() {
   if (http.total + assert.nodeTotal === 0) return null
 
   return (
-    <div className={`stats-bar${collapsed ? ' stats-collapsed' : ''}`}>
-      <div className="stats-bar-header">
-        <span className="stats-bar-title">📊 自动化统计</span>
-        {!collapsed && (
-          <span className="stats-bar-summary">
-            请求 {http.success}/{http.total} · 断言 {assert.passedRules}/{assert.totalRules}{lastExecutionTime != null ? ` · ${lastExecutionTime}ms` : ''}
-          </span>
-        )}
-        <button className="stats-toggle" onClick={() => setCollapsed(!collapsed)} title={collapsed ? '展开' : '收起'}>
-          {collapsed ? '▾' : '▸'}
+    <div className={`stats-panel${collapsed ? ' stats-collapsed' : ''}`}>
+      {collapsed ? (
+        <button className="stats-expand-btn" onClick={() => setCollapsed(false)} title="展开自动化统计">
+          <span className="stats-expand-icon">▸</span>
+          <span className="stats-expand-label">统计</span>
         </button>
-      </div>
-      {!collapsed && (
-        <table className="stats-table">
-          <thead>
-            <tr>
-              <th className="stats-th-left">类型</th>
-              <th>总数</th>
-              <th>未运行</th>
-              <th>运行成功</th>
-              <th>运行失败</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="stats-td-left">请求节点</td>
-              <td className="stats-td">{http.total}</td>
-              <td className="stats-td stats-idle-cell">{http.idle}</td>
-              <td className="stats-td stats-success-cell">{http.success}</td>
-              <td className="stats-td stats-error-cell">{http.error}</td>
-            </tr>
-            <tr>
-              <td className="stats-td-left">断言节点</td>
-              <td className="stats-td">{assert.nodeTotal}</td>
-              <td className="stats-td stats-idle-cell">{assert.nodeIdle}</td>
-              <td className="stats-td stats-success-cell">{assert.nodeSuccess}</td>
-              <td className="stats-td stats-error-cell">{assert.nodeError}</td>
-            </tr>
-            <tr>
-              <td className="stats-td-left">断言次数</td>
-              <td className="stats-td">{assert.totalRules}</td>
-              <td className="stats-td stats-idle-cell">{assert.idleRules}</td>
-              <td className="stats-td stats-success-cell">{assert.passedRules}</td>
-              <td className="stats-td stats-error-cell">{assert.failedRules}</td>
-            </tr>
-          </tbody>
-        </table>
+      ) : (
+        <>
+          <div className="stats-panel-header">
+            <span>📊 自动化统计</span>
+            <button className="stats-panel-toggle" onClick={() => setCollapsed(true)} title="收起">◂</button>
+          </div>
+          <div className="stats-summary-line">
+            请求 {http.success}/{http.total} · 断言 {assert.passedRules}/{assert.totalRules}{lastExecutionTime != null ? ` · ${lastExecutionTime}ms` : ''}
+          </div>
+          <table className="stats-table">
+            <thead>
+              <tr>
+                <th className="stats-th-left">类型</th>
+                <th>总数</th>
+                <th>未运行</th>
+                <th>成功</th>
+                <th>失败</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="stats-td-left">请求节点</td>
+                <td className="stats-td">{http.total}</td>
+                <td className="stats-td stats-idle-cell">{http.idle}</td>
+                <td className="stats-td stats-success-cell">{http.success}</td>
+                <td className="stats-td stats-error-cell">{http.error}</td>
+              </tr>
+              <tr>
+                <td className="stats-td-left">断言节点</td>
+                <td className="stats-td">{assert.nodeTotal}</td>
+                <td className="stats-td stats-idle-cell">{assert.nodeIdle}</td>
+                <td className="stats-td stats-success-cell">{assert.nodeSuccess}</td>
+                <td className="stats-td stats-error-cell">{assert.nodeError}</td>
+              </tr>
+              <tr>
+                <td className="stats-td-left">断言次数</td>
+                <td className="stats-td">{assert.totalRules}</td>
+                <td className="stats-td stats-idle-cell">{assert.idleRules}</td>
+                <td className="stats-td stats-success-cell">{assert.passedRules}</td>
+                <td className="stats-td stats-error-cell">{assert.failedRules}</td>
+              </tr>
+            </tbody>
+          </table>
+        </>
       )}
     </div>
   )
