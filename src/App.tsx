@@ -4,7 +4,6 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
-  useReactFlow,
   type Node,
   type Edge,
   type Connection,
@@ -25,7 +24,7 @@ import ExtractPanel from './panels/ExtractPanel'
 import StartPanel from './panels/StartPanel'
 import StatsBar from './panels/StatsBar'
 import ContextViewer from './panels/ContextViewer'
-
+import FocusNodeHandler from './panels/FocusNodeHandler'
 import { checkProxy } from './lib/proxy'
 import { runWorkflow } from './lib/runner'
 import { validateConnection } from './lib/validateEdges'
@@ -172,16 +171,10 @@ function App() {
     return () => window.removeEventListener('delete-node', handler)
   }, [setNodes, setEdges])
 
-  const rf = useReactFlow()
-
   useEffect(() => {
     const handler = (e: Event) => {
       const nodeId = (e as CustomEvent).detail?.nodeId
       if (!nodeId) return
-      const node = nodes.find((n) => n.id === nodeId)
-      if (!node) return
-      rf.setCenter(node.position.x + 100, node.position.y + 50, { zoom: 1.2, duration: 400 })
-      // flash border
       setNodes((nds) =>
         nds.map((n) => (n.id === nodeId ? { ...n, style: { border: '2px solid #1677ff', boxShadow: '0 0 12px rgba(22,119,255,0.4)' } } : n)),
       )
@@ -191,9 +184,9 @@ function App() {
         )
       }, 600)
     }
-    window.addEventListener('focus-node', handler)
-    return () => window.removeEventListener('focus-node', handler)
-  }, [nodes, rf, setNodes])
+    window.addEventListener('flash-node', handler)
+    return () => window.removeEventListener('flash-node', handler)
+  }, [setNodes])
 
   useEffect(() => {
     getCanvasStore().saveCanvasData(activeCanvasId, nodes, edges)
@@ -602,6 +595,7 @@ function App() {
               edgeTypes={edgeTypes}
               fitView
             >
+              <FocusNodeHandler />
               <Controls />
               <Background color="#c0c6d4" gap={20} />
             </ReactFlow>

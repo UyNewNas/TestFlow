@@ -26,12 +26,12 @@ async function executeNode(
     for (const [pid, pv] of Object.entries(pvs)) {
       const k = portIdFromHandle(pid)
       if (k) ctx[k] = pv
-      else if (!pid.startsWith('var-')) ctx[pid] = pv
     }
   }
   for (const [key, val] of Object.entries(inputValues)) {
     const pid = portIdFromHandle(key)
     if (pid) ctx[pid] = val
+    else ctx[key] = val
   }
 
   if (isHttpRequest(node)) {
@@ -128,7 +128,6 @@ export async function runWorkflow(
   for (const node of sorted) {
     if (stopAt && node.id === stopAt) break
 
-    // Check execute port
     const execEdge = edgeMap.get(`${node.id}::${inPortId('execute')}`)
     let shouldRun = true
     if (execEdge) {
@@ -162,7 +161,11 @@ export async function runWorkflow(
           const pid = portIdFromHandle(targetHandle)
           if (pid) {
             for (const p of node.data.in ?? []) {
-              if (p.id === pid) { p.value = value; break }
+              if (p.id === pid) {
+                p.value = value
+                if (p.label && p.label !== p.id) inputValues[p.label] = value
+                break
+              }
             }
           }
         }
@@ -178,7 +181,7 @@ export async function runWorkflow(
         outValues[outPortId('ok')] = true
         outValues[outPortId('status_code')] = (result as Record<string, unknown>).statusCode
         outValues[outPortId('response_time')] = (result as Record<string, unknown>).responseTime
-        outValues[outPortId('response_body')] = (result as Record<string, unknown>).responseBody        
+        outValues[outPortId('response_body')] = (result as Record<string, unknown>).responseBody
       } else if (isExtract(node)) {
         const { extracted } = result as { extracted: Record<string, unknown> }
         for (const [key, value] of Object.entries(extracted)) {
@@ -200,7 +203,6 @@ export async function runWorkflow(
       allPortValues[node.id] = outValues
       for (const p of node.data.out ?? []) {
         p.value = outValues[outPortId(p.id)]
-        if (p.label && p.label !== p.id) outValues[p.label] = p.value
       }
 
       callback(node.id, 'success', result)
