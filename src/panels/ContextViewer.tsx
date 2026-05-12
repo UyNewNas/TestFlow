@@ -25,38 +25,45 @@ export default function ContextViewer() {
   }
 
   return (
-    <div className="context-viewer">
-      <div className="context-viewer-header">
-        <span>📋 变量上下文 ({allEntries.length})</span>
-        <button className="context-toggle" onClick={() => setCollapsed(!collapsed)} title={collapsed ? '展开' : '收起'}>
-          {collapsed ? '▸' : '▾'}
+    <div className={`context-viewer${collapsed ? ' context-collapsed' : ''}`}>
+      {collapsed ? (
+        <button className="context-expand-btn" onClick={() => setCollapsed(false)} title="展开变量上下文">
+          <span className="context-expand-icon">▸</span>
+          <span className="context-expand-count">{allEntries.length}</span>
         </button>
-      </div>
-      {!collapsed && (
-        allEntries.length === 0 ? (
-          <div className="context-empty">暂无变量，执行工作流后将在此显示</div>
-        ) : (
-          <div className="context-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>节点</th>
-                  <th>端口</th>
-                  <th>值</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allEntries.map((e) => (
-                  <tr key={`${e.nodeId}-${e.portId}`}>
-                    <td className="ctx-key">{e.nodeId}</td>
-                    <td className="ctx-key">{e.portId}</td>
-                    <td className="ctx-value" title={safeDisplay(e.value)}>{safeDisplay(e.value)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      ) : (
+        <>
+          <div className="context-viewer-header">
+            <span>📋 变量上下文 ({allEntries.length})</span>
+            <button className="context-toggle" onClick={() => setCollapsed(true)} title="收起">
+              ◂
+            </button>
           </div>
-        )
+          {allEntries.length === 0 ? (
+            <div className="context-empty">暂无变量，执行工作流后将在此显示</div>
+          ) : (
+            <div className="context-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>节点</th>
+                    <th>端口</th>
+                    <th>值</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allEntries.map((e) => (
+                    <tr key={`${e.nodeId}-${e.portId}`}>
+                      <td className="ctx-key">{e.nodeId}</td>
+                      <td className="ctx-key">{e.portId}</td>
+                      <td className="ctx-value" title={safeDisplay(e.value)}>{safeDisplay(e.value)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

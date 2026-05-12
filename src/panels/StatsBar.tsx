@@ -51,14 +51,16 @@ export default function StatsBar() {
   if (http.total + assert.nodeTotal === 0) return null
 
   return (
-    <div className="stats-bar">
+    <div className={`stats-bar${collapsed ? ' stats-collapsed' : ''}`}>
       <div className="stats-bar-header">
         <span className="stats-bar-title">📊 自动化统计</span>
-        <span className="stats-bar-summary">
-          请求 {http.success}/{http.total} · 断言 {assert.passedRules}/{assert.totalRules}
-        </span>
+        {!collapsed && (
+          <span className="stats-bar-summary">
+            请求 {http.success}/{http.total} · 断言 {assert.passedRules}/{assert.totalRules}
+          </span>
+        )}
         <button className="stats-toggle" onClick={() => setCollapsed(!collapsed)} title={collapsed ? '展开' : '收起'}>
-          {collapsed ? '▸' : '▾'}
+          {collapsed ? '▾' : '▸'}
         </button>
       </div>
       {!collapsed && (
