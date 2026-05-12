@@ -34,16 +34,16 @@ const EXECUTE_IN: VarPort = { id: 'execute', label: 'execute', direction: 'in', 
 const OK_OUT: VarPort = { id: 'ok', label: 'ok', direction: 'out', type: 'boolean', isDefault: true }
 
 export const HTTP_DEFAULT_OUT_PORTS: VarPort[] = [
-  { id: 'status_code', label: 'status_code', direction: 'out', type: 'number', isDefault: true },
-  { id: 'response_time', label: 'response_time', direction: 'out', type: 'number', isDefault: true },
-  { id: 'response_body', label: 'response_body', direction: 'out', type: 'object', isDefault: true },
+  { id: 'status_code', label: 'status_code', direction: 'out', type: 'number' },
+  { id: 'response_time', label: 'response_time', direction: 'out', type: 'number' },
+  { id: 'response_body', label: 'response_body', direction: 'out', type: 'object' },
   OK_OUT,
 ]
 
 export const ASSERT_DEFAULT_IN_PORTS: VarPort[] = [
-  { id: 'status_code', label: 'status_code', direction: 'in', type: 'number', isDefault: true },
-  { id: 'response_time', label: 'response_time', direction: 'in', type: 'number', isDefault: true },
-  { id: 'response_body', label: 'response_body', direction: 'in', type: 'object', isDefault: true },
+  { id: 'status_code', label: 'status_code', direction: 'in', type: 'number' },
+  { id: 'response_time', label: 'response_time', direction: 'in', type: 'number' },
+  { id: 'response_body', label: 'response_body', direction: 'in', type: 'object' },
   EXECUTE_IN,
 ]
 

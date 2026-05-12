@@ -2,7 +2,7 @@
 # TestFlow — API 测试工作流可视化编辑器
 
 <p align="center">
-  <img src="public/TestFlow1.0图标.png" width="96" alt="TestFlow 图标" />
+  <img src="public/logo.png" width="96" alt="TestFlow 图标" />
 </p>
 
 <p align="center">
@@ -81,7 +81,7 @@ TestFlow/
 │   └── server.js               # 本地代理服务器
 │
 ├── public/
-│   └── TestFlow1.0图标.png      # 项目图标
+│   └── logo.png                # 项目图标
 │
 └── src/
     ├── main.tsx                # 应用入口

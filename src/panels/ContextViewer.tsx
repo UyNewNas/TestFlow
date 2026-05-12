@@ -54,7 +54,7 @@ export default function ContextViewer() {
                 <tbody>
                   {allEntries.map((e) => (
                     <tr key={`${e.nodeId}-${e.portId}`}>
-                      <td className="ctx-key">{e.nodeId}</td>
+                      <td className="ctx-key ctx-clickable" onClick={() => window.dispatchEvent(new CustomEvent('focus-node', { bubbles: true, detail: { nodeId: e.nodeId } }))} title="点击定位节点">{e.nodeId}</td>
                       <td className="ctx-key">{e.portId}</td>
                       <td className="ctx-value" title={safeDisplay(e.value)}>{safeDisplay(e.value)}</td>
                     </tr>

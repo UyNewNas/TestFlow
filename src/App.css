@@ -619,6 +619,8 @@
 .context-table th { text-align: left; padding: 6px 8px; color: var(--text-tertiary); font-weight: 500; border-bottom: 1px solid var(--border-color); overflow: hidden; text-overflow: ellipsis; }
 .context-table td { padding: 6px 8px; border-bottom: 1px solid #fafafa; }
 .ctx-key { color: #531dab; font-weight: 500; font-family: monospace; font-size: 11px; }
+.ctx-clickable { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px; }
+.ctx-clickable:hover { color: #1677ff; }
 .ctx-value { color: var(--text-primary); font-family: monospace; word-break: break-all; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
 
 /* ── canvas tabs ── */
@@ -736,13 +738,16 @@
   font-weight: 500;
   color: var(--text-tertiary);
   padding: 2px 10px;
-  text-align: center;
+  text-align: left;
   border-bottom: 1px solid var(--border-color);
 }
 .stats-table td {
   padding: 2px 10px;
-  text-align: center;
+  text-align: left;
   font-size: 12px;
+}
+.stats-td {
+  min-width: 40px;
 }
 .stats-th-left, .stats-td-left {
   text-align: left !important;

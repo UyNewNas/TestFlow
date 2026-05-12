@@ -6,6 +6,7 @@ interface FlowState {
   selectedNodeId: string | null
   portValues: Record<string, Record<string, unknown>>
   nodeStatuses: Record<string, ExecutionStatus>
+  lastExecutionTime: number | null
 }
 
 type Listener = () => void
@@ -16,6 +17,7 @@ function createFlowStore() {
     selectedNodeId: null,
     portValues: {},
     nodeStatuses: {},
+    lastExecutionTime: null,
   }
 
   const listeners = new Set<Listener>()
@@ -76,7 +78,11 @@ function createFlowStore() {
       notify()
     },
     resetAllStatuses() {
-      state = { ...state, nodeStatuses: {} }
+      state = { ...state, nodeStatuses: {}, lastExecutionTime: null }
+      notify()
+    },
+    setExecutionTime(ms: number) {
+      state = { ...state, lastExecutionTime: ms }
       notify()
     },
   }

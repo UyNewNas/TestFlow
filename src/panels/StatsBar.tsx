@@ -5,6 +5,7 @@ import { useCanvasStore } from '../store/canvasStore'
 export default function StatsBar() {
   const [collapsed, setCollapsed] = useState(false)
   const nodeStatuses = useFlowStore((s) => s.nodeStatuses)
+  const lastExecutionTime = useFlowStore((s) => s.lastExecutionTime)
   const nodes = useCanvasStore((s) => {
     const canvas = s.canvases.find((c) => c.id === s.activeCanvasId)
     return canvas?.nodes ?? []
@@ -56,7 +57,7 @@ export default function StatsBar() {
         <span className="stats-bar-title">📊 自动化统计</span>
         {!collapsed && (
           <span className="stats-bar-summary">
-            请求 {http.success}/{http.total} · 断言 {assert.passedRules}/{assert.totalRules}
+            请求 {http.success}/{http.total} · 断言 {assert.passedRules}/{assert.totalRules}{lastExecutionTime != null ? ` · ${lastExecutionTime}ms` : ''}
           </span>
         )}
         <button className="stats-toggle" onClick={() => setCollapsed(!collapsed)} title={collapsed ? '展开' : '收起'}>

@@ -1,6 +1,6 @@
 import { useUpdateNode } from '../store/updateNodeContext'
 import { getFlowStore } from '../store/flowStore'
-import type { AssertNodeData, AssertRule } from '../types/nodes'
+import type { AssertNodeData, AssertRule, VarPort } from '../types/nodes'
 import ConfigPanel from './ConfigPanel'
 
 interface Props {
@@ -18,6 +18,21 @@ const OPERATORS: { value: AssertRule['operator']; label: string }[] = [
   { value: 'regex', label: '正则' },
   { value: 'jsonpath', label: 'JSONPath' },
 ]
+
+function newPortId(prefix: string, existing: VarPort[]): string {
+  const ids = new Set(existing.map(p => p.id))
+  let id: string
+  do { id = `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` } while (ids.has(id))
+  return id
+}
+
+function uniqueName(base: string, existing: VarPort[]): string {
+  const names = new Set(existing.map(p => p.label))
+  if (!names.has(base)) return base
+  let i = 2
+  while (names.has(`${base}_${i}`)) i++
+  return `${base}_${i}`
+}
 
 export default function AssertPanel({ nodeId, data }: Props) {
   const updateNodeData = useUpdateNode()
@@ -41,7 +56,42 @@ export default function AssertPanel({ nodeId, data }: Props) {
     updateData({ assertions: [...(data.assertions ?? []), { target: 'status_code', operator: 'equal', expected: '200' }] })
   }
 
-  const inputPorts = (data.in ?? []).filter(p => p.id !== 'execute')
+  const allIn: VarPort[] = data.in ?? []
+  const inputPorts = allIn.filter(p => p.id !== 'execute')
+
+  function syncIn(next: VarPort[]) {
+    const withExec = [...next, ...allIn.filter(p => p.id === 'execute')]
+    updateNodeData(nodeId, { in: withExec })
+  }
+
+  function addInVar() {
+    const name = uniqueName('变量', inputPorts)
+    syncIn([...inputPorts, {
+      id: newPortId('assert_in', inputPorts),
+      label: name,
+      direction: 'in',
+      type: 'string',
+    }])
+  }
+
+  function removeInVar(index: number) {
+    const next = [...inputPorts]
+    next.splice(index, 1)
+    syncIn(next)
+  }
+
+  function updateInVarLabel(index: number, label: string, blur: boolean) {
+    const next = [...inputPorts]
+    const trimmed = label.trim()
+    if (!trimmed) return
+    if (blur) {
+      const others = next.filter((_, j) => j !== index)
+      next[index] = { ...next[index], label: uniqueName(trimmed, others) }
+    } else {
+      next[index] = { ...next[index], label }
+    }
+    syncIn(next)
+  }
 
   return (
     <ConfigPanel title="断言节点配置">
@@ -71,11 +121,19 @@ export default function AssertPanel({ nodeId, data }: Props) {
       <div className="panel-section">
         <div className="panel-section-header">
           <span>输入变量</span>
+          <button className="btn-small" onClick={addInVar}>+ 添加</button>
         </div>
         <div className="kv-editor">
-          {inputPorts.map((v) => (
+          {inputPorts.map((v, i) => (
             <div key={v.id} className="kv-row">
-              <input type="text" value={v.label} disabled placeholder="变量名" />
+              <input
+                type="text"
+                value={v.label}
+                onChange={(e) => updateInVarLabel(i, e.target.value, false)}
+                onBlur={(e) => updateInVarLabel(i, e.target.value, true)}
+                placeholder="变量名"
+              />
+              <button className="kv-remove" onClick={() => removeInVar(i)}>✕</button>
             </div>
           ))}
         </div>

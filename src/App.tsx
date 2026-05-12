@@ -4,6 +4,7 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
+  useReactFlow,
   type Node,
   type Edge,
   type Connection,
@@ -171,6 +172,29 @@ function App() {
     return () => window.removeEventListener('delete-node', handler)
   }, [setNodes, setEdges])
 
+  const rf = useReactFlow()
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const nodeId = (e as CustomEvent).detail?.nodeId
+      if (!nodeId) return
+      const node = nodes.find((n) => n.id === nodeId)
+      if (!node) return
+      rf.setCenter(node.position.x + 100, node.position.y + 50, { zoom: 1.2, duration: 400 })
+      // flash border
+      setNodes((nds) =>
+        nds.map((n) => (n.id === nodeId ? { ...n, style: { border: '2px solid #1677ff', boxShadow: '0 0 12px rgba(22,119,255,0.4)' } } : n)),
+      )
+      setTimeout(() => {
+        setNodes((nds) =>
+          nds.map((n) => (n.id === nodeId ? { ...n, style: {} } : n)),
+        )
+      }, 600)
+    }
+    window.addEventListener('focus-node', handler)
+    return () => window.removeEventListener('focus-node', handler)
+  }, [nodes, rf, setNodes])
+
   useEffect(() => {
     getCanvasStore().saveCanvasData(activeCanvasId, nodes, edges)
   }, [nodes, edges, activeCanvasId])
@@ -332,6 +356,7 @@ function App() {
       return
     }
 
+    const startTime = performance.now()
     const portValues = await runWorkflow(typedNodes, edges, (nodeId, status, data) => {
       store.setNodeStatus(nodeId, status)
       if (status === 'success' && data) {
@@ -351,6 +376,7 @@ function App() {
         }
       }
     }, stopAt)
+    store.setExecutionTime(Math.round(performance.now() - startTime))
 
     for (const [nodeId, pvs] of Object.entries(portValues)) {
       store.setPortValues(nodeId, pvs)

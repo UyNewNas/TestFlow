@@ -226,9 +226,8 @@ export default function HttpRequestPanel({ nodeId, data }: Props) {
                   syncOut(next)
                 }}
                 placeholder="变量名"
-                disabled={v.isDefault}
               />
-              {!v.isDefault && <button className="kv-remove" onClick={() => removeOutVar(i)}>✕</button>}
+              <button className="kv-remove" onClick={() => removeOutVar(i)}>✕</button>
             </div>
           ))}
         </div>
