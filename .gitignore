@@ -141,3 +141,14 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+.claude/
+.trae/
+docs/
+.gitignore
+/.claude
+*.png
+
+# ── vscode & editors ──
+.vscode/
+.idea/
