@@ -487,7 +487,7 @@ function App() {
         )}
 
         <div className="canvas-tabs">
-          <img src="/TestFlow1.0图标.png" alt="TestFlow" className="app-logo" />
+          <img src="/logo.png" alt="TestFlow" className="app-logo" />
           <span className="app-brand">TestFlow</span>
           <div className="canvas-tabs-list">
             {canvases.map((canvas) => (
