@@ -20,11 +20,33 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Detect release type
+        id: meta
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ($tag -match '-beta') {
+            Write-Output "IS_BETA=true" >> $env:GITHUB_OUTPUT
+            Write-Output "LABEL=Beta" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Output "IS_BETA=false" >> $env:GITHUB_OUTPUT
+            Write-Output "LABEL=Stable" >> $env:GITHUB_OUTPUT
+          }
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build Vite
         run: npx tsc -b && npx vite build
+
+      - name: Inject version into package.json
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}" -replace '^v', ''
+          $pkg = Get-Content package.json -Raw | ConvertFrom-Json
+          $pkg.version = $ver
+          $pkg | ConvertTo-Json -Depth 32 | Set-Content package.json
+          Write-Host "Version set to $ver"
 
       - name: Build Electron
         run: npx electron-builder --win --publish=never
@@ -36,7 +58,7 @@ jobs:
         with:
           files: release/*.exe
           body: |
-            ## TestFlow ${{ github.ref_name }}
+            ## TestFlow ${{ github.ref_name }} (${{ steps.meta.outputs.LABEL }})
             
             Windows 离线安装包，无需 Node.js 环境即可运行。
             
@@ -45,5 +67,7 @@ jobs:
             
             ### 变更
             查看 [提交历史](https://github.com/UyNewNas/TestFlow/commits/${{ github.ref_name }})
+            
+            > 自动构建于 `${{ github.ref_name }}` 标签
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.meta.outputs.IS_BETA }}

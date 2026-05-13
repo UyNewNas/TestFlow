@@ -176,6 +176,11 @@ npm run electron:build     # 打包为 Windows 安装包 → release/TestFlow Se
 
 CI/CD 自动构建：推送 `v*` 标签自动触发 GitHub Actions 打包并发布到 Releases。
 
+| 标签格式 | 分支 | Release 类型 | 示例 |
+|------|------|------|------|
+| `v*` | `master` | Stable | `v0.1`, `v0.2` |
+| `v*-beta*` | `dev` | Beta / Pre-release | `v0.1-beta`, `v0.2-beta.1` |
+
 | Workflow | 状态 |
 |------|------|
 | CI | [![CI](https://github.com/UyNewNas/TestFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/UyNewNas/TestFlow/actions/workflows/ci.yml) |
