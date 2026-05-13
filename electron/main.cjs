@@ -1,82 +1,132 @@
-const { app, BrowserWindow, dialog } = require('electron')
-const { spawn } = require('child_process')
-const path = require('path')
+const { app, BrowserWindow } = require('electron')
 const http = require('http')
+const https = require('https')
+const { URL } = require('url')
 
 const PROXY_PORT = 58080
 const isDev = !app.isPackaged
 
 let mainWindow = null
-let proxyProcess = null
+let proxyServer = null
 
-function startProxy() {
+function forwardRequest(targetUrl, method, headers, body) {
   return new Promise((resolve, reject) => {
-    const serverPath = path.join(__dirname, '..', 'proxy', 'server.js')
-    proxyProcess = spawn('node', [serverPath], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env },
+    const parsed = new URL(targetUrl)
+    const lib = parsed.protocol === 'https:' ? https : http
+
+    const options = {
+      hostname: parsed.hostname,
+      port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+      path: parsed.pathname + parsed.search,
+      method,
+      headers: { ...headers },
+      rejectUnauthorized: false,
+    }
+
+    delete options.headers['host']
+    delete options.headers['connection']
+    delete options.headers['proxy-connection']
+
+    const req = lib.request(options, (res) => {
+      const chunks = []
+      res.on('data', (chunk) => chunks.push(chunk))
+      res.on('end', () => {
+        resolve({
+          status: res.statusCode,
+          headers: res.headers,
+          body: Buffer.concat(chunks),
+        })
+      })
     })
 
-    let started = false
+    req.on('error', (err) => reject(err))
 
-    proxyProcess.stdout.on('data', (data) => {
-      const msg = data.toString()
-      console.log('[proxy]', msg.trim())
-      if (!started && msg.includes('listening')) {
-        started = true
-        resolve()
-      }
-    })
-
-    proxyProcess.stderr.on('data', (data) => {
-      console.error('[proxy:err]', data.toString().trim())
-    })
-
-    proxyProcess.on('error', (err) => {
-      console.error('[proxy] failed to start:', err.message)
-      reject(err)
-    })
-
-    proxyProcess.on('exit', (code) => {
-      console.log(`[proxy] exited with code ${code}`)
-      proxyProcess = null
-    })
-
-    // fallback: try health check
-    setTimeout(() => {
-      if (!started) {
-        checkHealth()
-          .then(() => { started = true; resolve() })
-          .catch(() => { /* keep waiting */ })
-      }
-    }, 2000)
-
-    // hard timeout
-    setTimeout(() => {
-      if (!started) {
-        started = true
-        console.warn('[proxy] startup timeout, continuing anyway')
-        resolve()
-      }
-    }, 8000)
+    if (body) {
+      req.write(body)
+    }
+    req.end()
   })
 }
 
-function checkHealth() {
-  return new Promise((resolve, reject) => {
-    const req = http.get(`http://localhost:${PROXY_PORT}/health`, (res) => {
-      if (res.statusCode === 200) resolve()
-      else reject(new Error(`status ${res.statusCode}`))
+function startProxy() {
+  return new Promise((resolve) => {
+    proxyServer = http.createServer(async (req, res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', '*')
+
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204)
+        res.end()
+        return
+      }
+
+      const parsedUrl = new URL(req.url, `http://localhost:${PROXY_PORT}`)
+
+      if (parsedUrl.pathname === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ status: 'ok', timestamp: Date.now() }))
+        return
+      }
+
+      if (parsedUrl.pathname === '/proxy') {
+        const targetUrl = req.headers['x-proxy-target'] || parsedUrl.searchParams.get('target')
+
+        if (!targetUrl) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Missing target URL. Use ?target=<url> or X-Proxy-Target header.' }))
+          return
+        }
+
+        try {
+          const chunks = []
+          req.on('data', (chunk) => chunks.push(chunk))
+          req.on('end', async () => {
+            const body = chunks.length > 0 ? Buffer.concat(chunks) : null
+
+            try {
+              const result = await forwardRequest(targetUrl, req.method, req.headers, body)
+              const responseHeaders = { ...result.headers }
+              delete responseHeaders['transfer-encoding']
+              delete responseHeaders['content-encoding']
+
+              if (result.body && result.body.length > 0) {
+                responseHeaders['content-length'] = result.body.length
+              }
+
+              res.writeHead(result.status, responseHeaders)
+              res.end(result.body)
+            } catch (err) {
+              res.writeHead(502, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ error: 'Proxy request failed', detail: err.message }))
+            }
+          })
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: err.message }))
+        }
+        return
+      }
+
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Not found' }))
     })
-    req.on('error', reject)
-    req.setTimeout(2000, () => { req.destroy(); reject(new Error('timeout')) })
+
+    proxyServer.listen(PROXY_PORT, () => {
+      console.log(`[testflow-proxy] listening on http://localhost:${PROXY_PORT}`)
+      resolve()
+    })
+
+    proxyServer.on('error', (err) => {
+      console.error('[testflow-proxy] server error:', err.message)
+    })
   })
 }
 
 function stopProxy() {
-  if (proxyProcess) {
-    proxyProcess.kill()
-    proxyProcess = null
+  if (proxyServer) {
+    proxyServer.close()
+    proxyServer = null
   }
 }
 
@@ -90,7 +140,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.cjs'),
+      preload: `${__dirname}/preload.cjs`,
     },
   })
 
@@ -98,7 +148,7 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173')
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
-    mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
+    mainWindow.loadFile(`${__dirname}/../dist/index.html`)
   }
 
   mainWindow.on('closed', () => {
