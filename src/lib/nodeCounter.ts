@@ -13,3 +13,7 @@ export function syncNodeCounter(nodes: Node[]) {
     .reduce((max, n) => Math.max(max, n), 2)
   nodeCounter = maxId + 1
 }
+
+export function nextNodeId(): number {
+  return nodeCounter++
+}

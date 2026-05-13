@@ -37,7 +37,7 @@ import type {
   AssertNodeData,
 } from './types/nodes'
 import { HTTP_DEFAULT_OUT_PORTS, ASSERT_DEFAULT_IN_PORTS, ASSERT_DEFAULT_OUT_PORTS } from './types/nodes'
-import { syncNodeCounter } from './lib/nodeCounter'
+import { syncNodeCounter, nextNodeId } from './lib/nodeCounter'
 
 import CustomEdge from './edges/CustomEdge'
 import logoImg from '../public/logo.png'
@@ -376,7 +376,7 @@ function App() {
   const addNode = (type: 'httpRequest' | 'assert') => {
     setNodes((nds) => {
       syncNodeCounter(nds)
-      const id = String(nodeCounter++)
+      const id = String(nextNodeId())
       const x = Math.random() * 300 + 100
       const y = Math.random() * 300 + 100
 
