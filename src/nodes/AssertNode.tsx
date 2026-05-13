@@ -47,6 +47,7 @@ function AssertNode({ id, data }: NodeProps) {
 
   const uni = useUpdateNodeInternals()
   const lenRef = useRef(allIn.length + allOut.length)
+  const portCount = allIn.length + allOut.length
 
   useLayoutEffect(() => {
     const cur = allIn.length + allOut.length
@@ -55,7 +56,7 @@ function AssertNode({ id, data }: NodeProps) {
       const t = setTimeout(() => uni(id), 50)
       return () => clearTimeout(t)
     }
-  }, [allIn.length + allOut.length, id, uni])
+  }, [portCount, id, uni])
 
   function delNode(e: React.MouseEvent) {
     e.stopPropagation()

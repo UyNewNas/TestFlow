@@ -4,7 +4,6 @@ import type { HttpRequestNodeData, VarPort } from '../types/nodes'
 import { inPortId, outPortId } from '../types/nodes'
 import { useFlowStore } from '../store/flowStore'
 
-const RE = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*\}\}/g
 const MC: Record<string, string> = { GET: '#61affe', POST: '#49cc90', PUT: '#fca130', DELETE: '#f93e3e', PATCH: '#a78bfa' }
 
 function portColor(p: VarPort): string | undefined {
@@ -50,6 +49,7 @@ function HttpRequestNode({ id, data }: NodeProps) {
 
   const uni = useUpdateNodeInternals()
   const lenRef = useRef(allIn.length + allOut.length)
+  const portCount = allIn.length + allOut.length
 
   useLayoutEffect(() => {
     const cur = allIn.length + allOut.length
@@ -58,17 +58,17 @@ function HttpRequestNode({ id, data }: NodeProps) {
       const t = setTimeout(() => uni(id), 50)
       return () => clearTimeout(t)
     }
-  }, [allIn.length + allOut.length, id, uni])
+  }, [portCount, id, uni])
 
   const u = req.url || ''
 
   function renderUrl() {
     if (!u) return <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>—</span>
+    const re = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*\}\}/g
     const parts: React.ReactNode[] = []
     let last = 0
-    RE.lastIndex = 0
     let m
-    while ((m = RE.exec(u)) !== null) {
+    while ((m = re.exec(u)) !== null) {
       if (m.index > last) parts.push(u.slice(last, m.index))
       parts.push(<span key={m.index} className="ref-tag">{'{{'+m[1]+'}}'}</span>)
       last = m.index + m[0].length

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import type { Node, Edge } from '@xyflow/react'
 import { getCanvasStore, type CanvasData } from './canvasStore'
 
 function clearLocalStorage() {
@@ -101,7 +102,7 @@ describe('canvasStore', () => {
       const id = store.addCanvas('数据画布')
       const nodes = [{ id: 'n1', type: 'start', position: { x: 0, y: 0 }, data: { label: '开始' } }]
       const edges = [{ id: 'e1', source: 'n1', target: 'n2', sourceHandle: 'out', targetHandle: 'in' }]
-      store.saveCanvasData(id, nodes as any, edges as any)
+      store.saveCanvasData(id, nodes as unknown as Node[], edges as unknown as Edge[])
       const canvas = store.getAllCanvases().find(c => c.id === id)
       expect(canvas).toBeDefined()
       expect(canvas!.nodes).toHaveLength(1)
@@ -113,7 +114,7 @@ describe('canvasStore', () => {
       const id1 = store.addCanvas('画布A')
       const id2 = store.addCanvas('画布B')
       expect(id1).not.toBe(id2)
-      store.saveCanvasData(id2, [{ id: 'x', type: 'start', position: { x: 0, y: 0 }, data: {} }] as any, [])
+      store.saveCanvasData(id2, [{ id: 'x', type: 'start', position: { x: 0, y: 0 }, data: {} }] as unknown as Node[], [])
       const c1 = store.getAllCanvases().find(c => c.id === id1)
       expect(c1).toBeDefined()
       expect(c1!.nodes).toEqual([])
