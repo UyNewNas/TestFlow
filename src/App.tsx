@@ -39,6 +39,7 @@ import type {
 import { HTTP_DEFAULT_OUT_PORTS, ASSERT_DEFAULT_IN_PORTS, ASSERT_DEFAULT_OUT_PORTS } from './types/nodes'
 
 import CustomEdge from './edges/CustomEdge'
+import logoImg from '../public/logo.png'
 import './App.css'
 
 const nodeTypes: NodeTypes = {
@@ -479,7 +480,7 @@ function App() {
         )}
 
         <div className="canvas-tabs">
-          <img src="/logo.png" alt="TestFlow" className="app-logo" />
+          <img src={logoImg} alt="TestFlow" className="app-logo" />
           <span className="app-brand">TestFlow</span>
           <div className="canvas-tabs-list">
             {canvases.map((canvas) => (
