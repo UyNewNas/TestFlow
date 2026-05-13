@@ -44,6 +44,12 @@ function createCanvasStore() {
     initial = [{ id: defaultId, name: '画布 1', nodes: [], edges: [] }]
   }
 
+  let nextId = 1
+  function genId(): string {
+    const id = `canvas-${Date.now()}-${nextId++}`
+    return id
+  }
+
   const savedActive = localStorage.getItem(LS_ACTIVE)
   const activeId = savedActive && initial.find(c => c.id === savedActive) ? savedActive : initial[0].id
 
@@ -91,7 +97,7 @@ function createCanvasStore() {
     },
 
     addCanvas(name: string): string {
-      const id = `canvas-${Date.now()}`
+      const id = genId()
       const newCanvas: CanvasData = { id, name, nodes: [], edges: [] }
       state = { ...state, canvases: [...state.canvases, newCanvas] }
       notify()
@@ -116,7 +122,7 @@ function createCanvasStore() {
 
     importCanvas(data: CanvasData) {
       const existing = state.canvases.find(c => c.id === data.id)
-      const newId = existing ? `canvas-${Date.now()}` : data.id
+      const newId = existing ? genId() : data.id
       const newName = existing ? `${data.name} (导入)` : data.name
       const canvas: CanvasData = { ...data, id: newId, name: newName }
       state = { ...state, canvases: [...state.canvases, canvas] }

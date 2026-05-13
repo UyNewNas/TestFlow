@@ -478,7 +478,9 @@ function App() {
       <div className="app-container">
         {proxyOnline === false && (
           <div className="proxy-warning">
-            ⚠️ 代理未启动，请先运行：<code>node proxy/server.js</code>
+            {window.testflow?.isElectron
+              ? '⚠️ 代理服务器启动中，请稍候...'
+              : '⚠️ 代理未启动，请先运行：node proxy/server.js'}
           </div>
         )}
 

@@ -149,6 +149,9 @@ docs/
 /.claude
 /TestFlow1.0图标.png
 
+# ── Electron output ──
+release/
+
 # ── vscode & editors ──
 .vscode/
 .idea/

@@ -170,6 +170,26 @@ TestFlow/
 | `npm run preview` | 本地预览生产构建 |
 | `node proxy/server.js` | 启动代理服务器 |
 
+### 🖥️ Electron 桌面应用
+
+TestFlow 支持打包为独立的桌面应用，无需 Node.js 环境即可运行。
+
+```bash
+# 安装依赖（包含 Electron）
+npm install
+
+# 开发模式（两个终端）
+# 终端 1: 启动 Vite
+npm run electron:dev
+# 终端 2: 启动 Electron
+npm run electron:start
+
+# 打包为 Windows 安装包
+npm run electron:build
+```
+
+打包产物输出到 `release/` 目录。
+
 ---
 
 ## 📦 技术栈
