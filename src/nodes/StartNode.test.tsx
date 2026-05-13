@@ -8,10 +8,23 @@ function okPort(value?: boolean): VarPort {
   return { id: 'ok', label: 'ok', direction: 'out', type: 'boolean', value }
 }
 
+const nodeBase = {
+  type: 'start' as const,
+  dragging: false,
+  zIndex: 0,
+  selectable: true,
+  deletable: false,
+  selected: false,
+  draggable: false,
+  isConnectable: true,
+  positionAbsoluteX: 0,
+  positionAbsoluteY: 0,
+}
+
 function renderNode(data: Record<string, unknown>) {
   return render(
     <ReactFlowProvider>
-      <StartNode id="n1" data={data} />
+      <StartNode id="n1" data={data} {...nodeBase} />
     </ReactFlowProvider>,
   )
 }

@@ -170,18 +170,16 @@ TestFlow/
 TestFlow 支持打包为独立的桌面应用，无需 Node.js 环境即可运行。
 
 ```bash
-# 安装依赖（包含 Electron）
 npm install
-
-# 开发模式（两个终端）
-# 终端 1: 启动 Vite
-npm run electron:dev
-# 终端 2: 启动 Electron
-npm run electron:start
-
-# 打包为 Windows 安装包
-npm run electron:build
+npm run electron:build     # 打包为 Windows 安装包 → release/TestFlow Setup x.x.x.exe
 ```
+
+CI/CD 自动构建：推送 `v*` 标签自动触发 GitHub Actions 打包并发布到 Releases。
+
+| Workflow | 状态 |
+|------|------|
+| CI | [![CI](https://github.com/UyNewNas/TestFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/UyNewNas/TestFlow/actions/workflows/ci.yml) |
+| Release | [![Release](https://github.com/UyNewNas/TestFlow/actions/workflows/release.yml/badge.svg)](https://github.com/UyNewNas/TestFlow/actions/workflows/release.yml) |
 
 打包产物输出到 `release/` 目录。
 

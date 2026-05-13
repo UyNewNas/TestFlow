@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { toWorkflowFile, toReactFlow } from './serializer'
 import type { WorkflowFile } from '../types/nodes'
 
+const startData = { label: '开始', out: [] } as never
+
 const minimalWf: WorkflowFile = {
   version: '1.0',
   metadata: { name: 'test', createdAt: '', updatedAt: '' },
-  nodes: [{ id: 'n1', type: 'start', position: { x: 0, y: 0 }, data: { label: '开始', out: [] } }],
+  nodes: [{ id: 'n1', type: 'start', position: { x: 0, y: 0 }, data: startData }],
   edges: [],
 }
 
@@ -30,8 +32,8 @@ describe('toReactFlow', () => {
     const wf: WorkflowFile = {
       ...minimalWf,
       nodes: [
-        { id: 'n1', type: 'start', position: { x: 0, y: 0 }, data: { label: '开始', out: [] } },
-        { id: 'n2', type: 'httpRequest', position: { x: 200, y: 0 }, data: { type: 'httpRequest', label: '', request: { url: '', method: 'GET', headers: {} }, in: [], out: [] } },
+        { id: 'n1', type: 'start', position: { x: 0, y: 0 }, data: startData },
+        { id: 'n2', type: 'httpRequest', position: { x: 200, y: 0 }, data: { type: 'httpRequest', label: '', request: { url: '', method: 'GET' as const, headers: {} }, in: [], out: [] } },
       ],
       edges: [
         { id: 'e1', source: 'n1', target: 'n2', sourcePort: 'ok', targetPort: 'execute', type: 'data' },
@@ -95,8 +97,8 @@ describe('serializer — round-trip', () => {
       version: '1.0',
       metadata: { name: '测试工作流', createdAt: '', updatedAt: '' },
       nodes: [
-        { id: 'n1', type: 'start', position: { x: 0, y: 0 }, data: { label: '开始', out: [] } },
-        { id: 'n2', type: 'httpRequest', position: { x: 200, y: 100 }, data: { type: 'httpRequest', label: 'API', request: { url: 'https://httpbin.org/get', method: 'GET', headers: {} }, in: [], out: [] } },
+        { id: 'n1', type: 'start', position: { x: 0, y: 0 }, data: startData },
+        { id: 'n2', type: 'httpRequest', position: { x: 200, y: 100 }, data: { type: 'httpRequest', label: 'API', request: { url: 'https://httpbin.org/get', method: 'GET' as const, headers: {} }, in: [], out: [] } },
       ],
       edges: [
         { id: 'e1', source: 'n1', target: 'n2', sourcePort: 'ok', targetPort: 'execute', type: 'data' },
@@ -128,9 +130,9 @@ describe('serializer — 错误推测', () => {
       ...minimalWf,
       nodes: Array.from({ length: 100 }, (_, i) => ({
         id: `n${i}`,
-        type: 'start',
+        type: 'start' as const,
         position: { x: i * 200, y: 0 },
-        data: { label: `节点${i}`, out: [] },
+        data: startData,
       })),
     }
     const result = toReactFlow(wf)
