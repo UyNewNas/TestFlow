@@ -49,7 +49,6 @@ function HttpRequestNode({ id, data }: NodeProps) {
 
   const uni = useUpdateNodeInternals()
   const lenRef = useRef(allIn.length + allOut.length)
-  const portCount = allIn.length + allOut.length
 
   useLayoutEffect(() => {
     const cur = allIn.length + allOut.length
@@ -58,7 +57,7 @@ function HttpRequestNode({ id, data }: NodeProps) {
       const t = setTimeout(() => uni(id), 50)
       return () => clearTimeout(t)
     }
-  }, [portCount, id, uni])
+  }, [allIn.length, allOut.length, id, uni])
 
   const u = req.url || ''
 

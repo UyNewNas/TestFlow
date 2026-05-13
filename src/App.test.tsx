@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { syncNodeCounter, getNodeCounter } from './App'
+import { syncNodeCounter, getNodeCounter } from './lib/nodeCounter'
 import { getCanvasStore } from './store/canvasStore'
 import type { Node } from '@xyflow/react'
 

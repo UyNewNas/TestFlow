@@ -37,6 +37,7 @@ import type {
   AssertNodeData,
 } from './types/nodes'
 import { HTTP_DEFAULT_OUT_PORTS, ASSERT_DEFAULT_IN_PORTS, ASSERT_DEFAULT_OUT_PORTS } from './types/nodes'
+import { syncNodeCounter } from './lib/nodeCounter'
 
 import CustomEdge from './edges/CustomEdge'
 import logoImg from '../public/logo.png'
@@ -92,20 +93,6 @@ const createAssertNode = (id: string, x: number, y: number): Node => ({
     assertions: [],
   },
 })
-
-let nodeCounter = 3
-
-export function getNodeCounter() {
-  return nodeCounter
-}
-
-export function syncNodeCounter(nodes: Node[]) {
-  const maxId = nodes
-    .map(n => Number(n.id))
-    .filter(n => !isNaN(n))
-    .reduce((max, n) => Math.max(max, n), 2)
-  nodeCounter = maxId + 1
-}
 
 function extractCycleIds(errorMsg: string): string[] {
   const match = errorMsg.match(/涉及节点：(.+)$/)
