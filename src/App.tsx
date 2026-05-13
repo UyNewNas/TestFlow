@@ -95,6 +95,18 @@ const createAssertNode = (id: string, x: number, y: number): Node => ({
 
 let nodeCounter = 3
 
+export function getNodeCounter() {
+  return nodeCounter
+}
+
+export function syncNodeCounter(nodes: Node[]) {
+  const maxId = nodes
+    .map(n => Number(n.id))
+    .filter(n => !isNaN(n))
+    .reduce((max, n) => Math.max(max, n), 2)
+  nodeCounter = maxId + 1
+}
+
 function extractCycleIds(errorMsg: string): string[] {
   const match = errorMsg.match(/涉及节点：(.+)$/)
   if (!match) return []
@@ -129,6 +141,11 @@ function App() {
 
   useEffect(() => {
     checkProxy().then((v) => getFlowStore().setProxyOnline(v))
+  }, [])
+
+  useEffect(() => {
+    syncNodeCounter(nodes)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -182,7 +199,12 @@ function App() {
       prevCanvasIdRef.current = activeCanvasId
       const canvas = canvases.find((c) => c.id === activeCanvasId)
       if (canvas) {
-        setNodes(canvas.nodes?.length ? canvas.nodes : [])
+        if (canvas.nodes?.length) {
+          setNodes(canvas.nodes)
+          syncNodeCounter(canvas.nodes)
+        } else {
+          setNodes([createStartNode()])
+        }
         setEdges(canvas.edges || [])
       }
     }
@@ -365,20 +387,23 @@ function App() {
   }
 
   const addNode = (type: 'httpRequest' | 'assert') => {
-    const id = String(nodeCounter++)
-    const x = Math.random() * 300 + 100
-    const y = Math.random() * 300 + 100
+    setNodes((nds) => {
+      syncNodeCounter(nds)
+      const id = String(nodeCounter++)
+      const x = Math.random() * 300 + 100
+      const y = Math.random() * 300 + 100
 
-    let newNode: Node
-    switch (type) {
-      case 'httpRequest':
-        newNode = createHttpNode(id, x, y)
-        break
-      case 'assert':
-        newNode = createAssertNode(id, x, y)
-        break
-    }
-    setNodes((nds) => [...nds, newNode])
+      let newNode: Node
+      switch (type) {
+        case 'httpRequest':
+          newNode = createHttpNode(id, x, y)
+          break
+        case 'assert':
+          newNode = createAssertNode(id, x, y)
+          break
+      }
+      return [...nds, newNode]
+    })
   }
 
   const handleAddCanvas = () => {
