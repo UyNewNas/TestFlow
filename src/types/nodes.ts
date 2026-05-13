@@ -1,6 +1,6 @@
 import type { Node, Edge } from '@xyflow/react'
 
-export type NodeType = 'start' | 'httpRequest' | 'assert' | 'extract'
+export type NodeType = 'start' | 'httpRequest' | 'assert'
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 
 // ══════════ VarPort ══════════
@@ -48,13 +48,6 @@ export const ASSERT_DEFAULT_IN_PORTS: VarPort[] = [
 ]
 
 export const ASSERT_DEFAULT_OUT_PORTS: VarPort[] = [OK_OUT]
-
-export const EXTRACT_DEFAULT_IN_PORTS: VarPort[] = [
-  { id: 'source', label: 'source', direction: 'in', type: 'object' },
-  EXECUTE_IN,
-]
-
-export const EXTRACT_DEFAULT_OUT_PORTS: VarPort[] = [OK_OUT]
 
 // ══════════ Node Data ══════════
 
@@ -105,24 +98,7 @@ export interface AssertDetail {
   message: string
 }
 
-export interface ExtractNodeData {
-  label: string
-  type: 'extract'
-  in: VarPort[]
-  out: VarPort[]
-  rules: ExtractRule[]
-  result?: {
-    extracted: Record<string, unknown>
-  }
-  error?: string
-}
-
-export interface ExtractRule {
-  name: string
-  path: string
-}
-
-export type CustomNodeData = HttpRequestNodeData | AssertNodeData | ExtractNodeData
+export type CustomNodeData = HttpRequestNodeData | AssertNodeData
 
 // ══════════ ReactFlow / Execution ══════════
 
@@ -150,7 +126,7 @@ export interface WorkflowFile {
 
 export interface WorkflowNode {
   id: string
-  type: 'start' | 'httpRequest' | 'assert' | 'extract'
+  type: 'start' | 'httpRequest' | 'assert'
   position: { x: number; y: number }
-  data: HttpRequestNodeData | AssertNodeData | ExtractNodeData
+  data: HttpRequestNodeData | AssertNodeData
 }

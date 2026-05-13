@@ -17,9 +17,7 @@
 TestFlow 是一款**可视化 API 测试工作流编辑器**。你可以在画布上拖拽节点、连线编排测试流程，一键运行并实时查看每个节点的执行状态与变量流转。
 
 ```
-开始节点 → 请求节点 → 断言节点 → ...
-                ↓
-            提取节点
+开始节点 → 请求节点 → 断言节点
 ```
 
 ### 核心特性
@@ -94,14 +92,12 @@ TestFlow/
     ├── nodes/                   # 节点组件
     │   ├── StartNode.tsx       # 开始节点
     │   ├── HttpRequestNode.tsx # HTTP 请求节点
-    │   ├── ExtractNode.tsx     # 数据提取节点
     │   └── AssertNode.tsx      # 断言节点
     │
     ├── panels/                  # 编辑面板
     │   ├── ConfigPanel.tsx     # 通用配置面板外壳
     │   ├── StartPanel.tsx      # 开始节点面板（变量赋值）
     │   ├── HttpRequestPanel.tsx# HTTP 请求面板
-    │   ├── ExtractPanel.tsx    # 提取规则面板
     │   ├── AssertPanel.tsx     # 断言规则面板
     │   ├── ContextViewer.tsx   # 变量上下文查看器
     │   └── StatsBar.tsx        # 统计面板
@@ -130,7 +126,6 @@ TestFlow/
 |------|------|
 | **开始节点** 🟢 | 工作流入口。可定义输出变量并为变量赋值（如 `host=http://localhost`） |
 | **请求节点** 🔵 | 发送 HTTP 请求。支持 GET/POST/PUT/DELETE/PATCH，`{{变量}}` 模板语法 |
-| **提取节点** 🟣 | 从响应中提取数据。使用 JSONPath 从上游数据中提取指定字段 |
 | **断言节点** 🟠 | 验证结果。支持 equal、contains、regex、jsonpath 等多种断言方式 |
 
 ---

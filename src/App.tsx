@@ -16,11 +16,9 @@ import '@xyflow/react/dist/style.css'
 
 import HttpRequestNode from './nodes/HttpRequestNode'
 import AssertNode from './nodes/AssertNode'
-import ExtractNode from './nodes/ExtractNode'
 import StartNode from './nodes/StartNode'
 import HttpRequestPanel from './panels/HttpRequestPanel'
 import AssertPanel from './panels/AssertPanel'
-import ExtractPanel from './panels/ExtractPanel'
 import StartPanel from './panels/StartPanel'
 import StatsBar from './panels/StatsBar'
 import ContextViewer from './panels/ContextViewer'
@@ -37,9 +35,8 @@ import type {
   CustomNode,
   HttpRequestNodeData,
   AssertNodeData,
-  ExtractNodeData,
 } from './types/nodes'
-import { HTTP_DEFAULT_OUT_PORTS, ASSERT_DEFAULT_IN_PORTS, ASSERT_DEFAULT_OUT_PORTS, EXTRACT_DEFAULT_IN_PORTS, EXTRACT_DEFAULT_OUT_PORTS } from './types/nodes'
+import { HTTP_DEFAULT_OUT_PORTS, ASSERT_DEFAULT_IN_PORTS, ASSERT_DEFAULT_OUT_PORTS } from './types/nodes'
 
 import CustomEdge from './edges/CustomEdge'
 import './App.css'
@@ -48,7 +45,6 @@ const nodeTypes: NodeTypes = {
   start: StartNode,
   httpRequest: HttpRequestNode,
   assert: AssertNode,
-  extract: ExtractNode,
 }
 
 const edgeTypes: EdgeTypes = { data: CustomEdge }
@@ -93,19 +89,6 @@ const createAssertNode = (id: string, x: number, y: number): Node => ({
     in: [...ASSERT_DEFAULT_IN_PORTS],
     out: [...ASSERT_DEFAULT_OUT_PORTS],
     assertions: [],
-  },
-})
-
-const createExtractNode = (id: string, x: number, y: number): Node => ({
-  id,
-  type: 'extract',
-  position: { x, y },
-  data: {
-    label: '提取',
-    type: 'extract',
-    in: [...EXTRACT_DEFAULT_IN_PORTS],
-    out: [...EXTRACT_DEFAULT_OUT_PORTS],
-    rules: [],
   },
 })
 
@@ -309,13 +292,6 @@ function App() {
             data={selectedNode.data as unknown as AssertNodeData}
           />
         )
-      case 'extract':
-        return (
-          <ExtractPanel
-            nodeId={selectedNode.id}
-            data={selectedNode.data as unknown as ExtractNodeData}
-          />
-        )
       case 'start':
         return (
           <StartPanel
@@ -358,13 +334,11 @@ function App() {
           updateNodeData(nodeId, { result: data, error: undefined })
         } else if (node?.type === 'assert') {
           updateNodeData(nodeId, { result: data })
-        } else if (node?.type === 'extract') {
-          updateNodeData(nodeId, { result: data, error: undefined })
         }
       } else if (status === 'error' && data) {
         const node = typedNodes.find((n) => n.id === nodeId)
         const errMsg = (data as { error: string }).error || '未知错误'
-        if (node?.type === 'httpRequest' || node?.type === 'extract') {
+        if (node?.type === 'httpRequest') {
           updateNodeData(nodeId, { error: errMsg })
         }
       }
@@ -379,7 +353,7 @@ function App() {
       updateNodeData(node.id, {
         in: node.data.in ?? [],
         out: node.data.out ?? [],
-      } as Partial<HttpRequestNodeData | AssertNodeData | ExtractNodeData>)
+      } as Partial<HttpRequestNodeData | AssertNodeData>)
     }
   }
 
@@ -389,7 +363,7 @@ function App() {
     runAndSync(targetNodeId)
   }
 
-  const addNode = (type: 'httpRequest' | 'assert' | 'extract') => {
+  const addNode = (type: 'httpRequest' | 'assert') => {
     const id = String(nodeCounter++)
     const x = Math.random() * 300 + 100
     const y = Math.random() * 300 + 100
@@ -401,9 +375,6 @@ function App() {
         break
       case 'assert':
         newNode = createAssertNode(id, x, y)
-        break
-      case 'extract':
-        newNode = createExtractNode(id, x, y)
         break
     }
     setNodes((nds) => [...nds, newNode])
@@ -544,9 +515,6 @@ function App() {
           </button>
           <button className="btn-add" onClick={() => addNode('assert')}>
             + 断言节点
-          </button>
-          <button className="btn-add" onClick={() => addNode('extract')}>
-            + 提取节点
           </button>
           <div className="toolbar-spacer" />
           <button className="btn-file" onClick={handleClearCanvas}>

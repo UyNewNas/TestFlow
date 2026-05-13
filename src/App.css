@@ -402,10 +402,7 @@
   border: 1px solid #d3adf7;
 }
 
-/* ── extract vars in node ── */
-.node-varlist { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 .node-dim { font-size: 12px; color: var(--text-tertiary); font-style: italic; }
-.node-extract-ok { margin-top: 6px; font-size: 11px; color: var(--color-success); font-weight: 500; }
 .node-errline { margin-top: 6px; padding: 4px 10px; background: #fff2f0; border-radius: 6px; border: 1px solid #ffccc7; color: var(--color-error); font-size: 11px; word-break: break-all; }
 
 /* ── assert rules in node ── */
@@ -541,10 +538,8 @@
 }
 
 /* ── rule cards ── */
-.assert-rule-card,
-.extract-rule-card { border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 8px; background: var(--bg-container); }
+.assert-rule-card { border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 8px; background: var(--bg-container); }
 .assert-rule-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; }
-.extract-rule-card input { margin-bottom: 6px; }
 .json-preview { background: #f5f5f5; color: var(--text-primary); padding: 12px; border-radius: 6px; font-size: 12px; overflow-x: auto; max-height: 180px; overflow-y: auto; margin-top: 6px; font-family: monospace; border: 1px solid var(--border-color); }
 .source-preview details { font-size: 12px; }
 .source-preview summary { cursor: pointer; color: var(--color-primary); }

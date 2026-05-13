@@ -1,7 +1,7 @@
 import { JSONPath } from 'jsonpath-plus'
 import { proxyFetch } from './proxy'
 import { topologicalSort } from './topological'
-import type { CustomNode, CustomEdge, HttpRequestNodeData, AssertNodeData, ExtractNodeData } from '../types/nodes'
+import type { CustomNode, CustomEdge, HttpRequestNodeData, AssertNodeData } from '../types/nodes'
 import { inPortId, outPortId, portIdFromHandle } from '../types/nodes'
 
 export function isHttpRequest(node: CustomNode): node is CustomNode & { data: HttpRequestNodeData } {
@@ -9,9 +9,6 @@ export function isHttpRequest(node: CustomNode): node is CustomNode & { data: Ht
 }
 export function isAssert(node: CustomNode): node is CustomNode & { data: AssertNodeData } {
   return node.type === 'assert'
-}
-export function isExtract(node: CustomNode): node is CustomNode & { data: ExtractNodeData } {
-  return node.type === 'extract'
 }
 
 export type StepCallback = (nodeId: string, status: 'running' | 'success' | 'error', data?: unknown) => void
@@ -83,20 +80,6 @@ async function executeNode(
       }
     })
     return { total: details.length, passed: details.filter(d => d.passed).length, failed: details.filter(d => !d.passed).length, details }
-  }
-
-  if (isExtract(node)) {
-    let sourceBody: unknown
-    for (const p of node.data.in) {
-      const v = inputValues[inPortId(p.id)] ?? ctx[p.id]
-      if (v !== undefined && p.id !== 'execute') { sourceBody = v; break }
-    }
-    const extracted: Record<string, unknown> = {}
-    for (const rule of node.data.rules) {
-      try { extracted[rule.name] = JSONPath({ path: rule.path, json: sourceBody as object, wrap: false }) }
-      catch { extracted[rule.name] = undefined }
-    }
-    return { extracted }
   }
 
   if (node.type === 'start') return {}
@@ -182,12 +165,6 @@ export async function runWorkflow(
         outValues[outPortId('status_code')] = (result as Record<string, unknown>).statusCode
         outValues[outPortId('response_time')] = (result as Record<string, unknown>).responseTime
         outValues[outPortId('response_body')] = (result as Record<string, unknown>).responseBody
-      } else if (isExtract(node)) {
-        const { extracted } = result as { extracted: Record<string, unknown> }
-        for (const [key, value] of Object.entries(extracted)) {
-          outValues[outPortId(key)] = value
-        }
-        outValues[outPortId('ok')] = true
       } else if (node.type === 'start') {
         outValues[outPortId('ok')] = true
         for (const p of (node.data.out ?? [])) {
