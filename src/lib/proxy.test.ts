@@ -119,6 +119,84 @@ describe('proxyFetch', () => {
   })
 })
 
+describe('proxyFetch timeout (P0.3)', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('每次请求都传递 AbortSignal', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () => Promise.resolve({}),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { proxyFetch } = await import('./proxy')
+    await proxyFetch('https://api.example.com/data')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+  })
+
+  it('POST 请求也携带 AbortSignal', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () => Promise.resolve({}),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { proxyFetch } = await import('./proxy')
+    await proxyFetch('https://api.example.com/create', { method: 'POST', body: '{}' })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+  })
+
+  it('接受自定义 timeoutMs 参数', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () => Promise.resolve({}),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { proxyFetch } = await import('./proxy')
+    await proxyFetch('https://api.example.com/data', { timeoutMs: 5000 })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+  })
+
+  it('不传 timeoutMs 时仍传递 AbortSignal（使用默认 30s）', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () => Promise.resolve({}),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { proxyFetch } = await import('./proxy')
+    await proxyFetch('https://api.example.com/data', {})
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+  })
+})
+
 describe('checkProxy', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
