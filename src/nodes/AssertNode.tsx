@@ -1,42 +1,16 @@
-import { useRef, useLayoutEffect } from 'react'
-import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react'
-import type { AssertNodeData, VarPort } from '../types/nodes'
-import { inPortId, outPortId } from '../types/nodes'
+import { useRef, useLayoutEffect, useContext } from 'react'
+import type { NodeProps } from '@xyflow/react'
+import { useUpdateNodeInternals } from '@xyflow/react'
+import type { CustomNode, AssertNodeData } from '../types/nodes'
 import { useFlowStore } from '../store/flowStore'
+import { EventBusContext } from '../store/eventBusContext'
+import { PortIn } from '../components/PortIn'
+import { PortOut } from '../components/PortOut'
 
-function portColor(p: VarPort): string | undefined {
-  if (p.id === 'execute') return p.value === true ? '#06d6a0' : undefined
-  if (p.id === 'ok') return p.value === true ? '#06d6a0' : p.value === false ? '#ef476f' : undefined
-  return p.value !== undefined ? '#06d6a0' : undefined
-}
-
-function PortIn({ p }: { p: VarPort }) {
-  const c = portColor(p)
-  return (
-    <div className="io-port io-port-in">
-      <Handle type="target" position={Position.Left} id={inPortId(p.id)}
-        className="handle-var handle-var-in"
-        style={{ background: c || undefined }} />
-      <span className="port-label" style={{ color: c }}>{p.label || p.id}</span>
-    </div>
-  )
-}
-
-function PortOut({ p }: { p: VarPort }) {
-  const c = portColor(p)
-  return (
-    <div className="io-port io-port-out">
-      <span className="port-label" style={{ color: c }}>{p.label || p.id}</span>
-      <Handle type="source" position={Position.Right} id={outPortId(p.id)}
-        className="handle-var handle-var-out"
-        style={{ background: c || undefined }} />
-    </div>
-  )
-}
-
-function AssertNode({ id, data }: NodeProps) {
-  const nodeData = data as unknown as AssertNodeData
+function AssertNode({ id, data }: NodeProps<CustomNode>) {
+  const nodeData = data as AssertNodeData
   const status = useFlowStore((s) => s.nodeStatuses[id])
+  const bus = useContext(EventBusContext)
   const total = nodeData.assertions?.length ?? 0; const passed = nodeData.result?.passed ?? 0
   const bc = status === 'running' ? '#4cc9f0' : status === 'success' ? (passed === total && total > 0 ? '#06d6a0' : '#ffd166') : status === 'error' ? '#ef476f' : '#dde1e8'
   const allIn = nodeData.in ?? []; const allOut = nodeData.out ?? []
@@ -59,7 +33,7 @@ function AssertNode({ id, data }: NodeProps) {
 
   function delNode(e: React.MouseEvent) {
     e.stopPropagation()
-    window.dispatchEvent(new CustomEvent('delete-node', { bubbles: true, detail: { nodeId: id } }))
+    bus?.deleteNode(id)
   }
 
   return (

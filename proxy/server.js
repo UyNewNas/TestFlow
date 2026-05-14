@@ -1,6 +1,7 @@
 import http from 'node:http'
 import https from 'node:https'
 import { URL } from 'node:url'
+import { isPrivateIP } from './ssrf.js'
 
 const PORT = 58080
 
@@ -15,7 +16,7 @@ function forwardRequest(targetUrl, method, headers, body) {
       path: parsed.pathname + parsed.search,
       method,
       headers: { ...headers },
-      rejectUnauthorized: false,
+      rejectUnauthorized: true,
     }
 
     delete options.headers['host']
@@ -68,6 +69,27 @@ const server = http.createServer(async (req, res) => {
     if (!targetUrl) {
       res.writeHead(400, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'Missing target URL. Use ?target=<url> or X-Proxy-Target header.' }))
+      return
+    }
+
+    let targetParsed
+    try {
+      targetParsed = new URL(targetUrl)
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Invalid target URL' }))
+      return
+    }
+
+    if (targetParsed.protocol !== 'http:' && targetParsed.protocol !== 'https:') {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Only http and https protocols are allowed' }))
+      return
+    }
+
+    if (isPrivateIP(targetParsed.hostname)) {
+      res.writeHead(403, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Access to internal/private network addresses is blocked' }))
       return
     }
 

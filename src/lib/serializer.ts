@@ -1,13 +1,13 @@
-import type { Node, Edge } from '@xyflow/react'
-import type { WorkflowFile, WorkflowNode, WorkflowEdge } from '../types/nodes'
+import type { Edge } from '@xyflow/react'
+import type { WorkflowFile, WorkflowNode, WorkflowEdge, CustomNode } from '../types/nodes'
 import { inPortId, outPortId } from '../types/nodes'
 
-export function toReactFlow(data: WorkflowFile): { nodes: Node[]; edges: Edge[] } {
-  const nodes: Node[] = data.nodes.map((wn) => ({
+export function toReactFlow(data: WorkflowFile): { nodes: CustomNode[]; edges: Edge[] } {
+  const nodes: CustomNode[] = data.nodes.map((wn) => ({
     id: wn.id,
     type: wn.type,
     position: wn.position,
-    data: wn.data as unknown as Record<string, unknown>,
+    data: wn.data,
   }))
 
   const edges: Edge[] = data.edges.map((we) => ({
@@ -23,7 +23,7 @@ export function toReactFlow(data: WorkflowFile): { nodes: Node[]; edges: Edge[] 
 }
 
 export function toWorkflowFile(
-  nodes: Node[],
+  nodes: CustomNode[],
   edges: Edge[],
   metadata?: { name?: string },
 ): WorkflowFile {
@@ -33,7 +33,7 @@ export function toWorkflowFile(
     id: n.id,
     type: n.type as WorkflowNode['type'],
     position: n.position,
-    data: n.data as unknown as WorkflowNode['data'],
+    data: n.data,
   }))
 
   const wEdges: WorkflowEdge[] = edges.map((e) => ({

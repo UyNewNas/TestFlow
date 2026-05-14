@@ -23,6 +23,7 @@ import StartPanel from './panels/StartPanel'
 import StatsBar from './panels/StatsBar'
 import ContextViewer from './panels/ContextViewer'
 import FocusNodeHandler from './panels/FocusNodeHandler'
+import { EventBusContext, focusNodeRef } from './store/eventBusContext'
 import { checkProxy } from './lib/proxy'
 import { runWorkflow } from './lib/runner'
 import { validateConnection } from './lib/validateEdges'
@@ -135,46 +136,30 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const edgeId = (e as CustomEvent).detail?.edgeId
-      if (edgeId) {
-        setEdges((eds) => eds.filter((ed) => ed.id !== edgeId))
-      }
-    }
-    window.addEventListener('delete-edge', handler)
-    return () => window.removeEventListener('delete-edge', handler)
+  const onDeleteEdge = useCallback((edgeId: string) => {
+    setEdges((eds) => eds.filter((ed) => ed.id !== edgeId))
   }, [setEdges])
 
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const nodeId = (e as CustomEvent).detail?.nodeId
-      if (nodeId) {
-        setNodes((nds) => nds.filter((n) => n.id !== nodeId))
-        setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId))
-        getFlowStore().setSelectedNodeId(null)
-      }
-    }
-    window.addEventListener('delete-node', handler)
-    return () => window.removeEventListener('delete-node', handler)
+  const onDeleteNode = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((n) => n.id !== nodeId))
+    setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId))
+    getFlowStore().setSelectedNodeId(null)
   }, [setNodes, setEdges])
 
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const nodeId = (e as CustomEvent).detail?.nodeId
-      if (!nodeId) return
+  const onFlashNode = useCallback((nodeId: string) => {
+    setNodes((nds) =>
+      nds.map((n) => (n.id === nodeId ? { ...n, style: { border: '2px solid #1677ff', boxShadow: '0 0 12px rgba(22,119,255,0.4)' } } : n)),
+    )
+    setTimeout(() => {
       setNodes((nds) =>
-        nds.map((n) => (n.id === nodeId ? { ...n, style: { border: '2px solid #1677ff', boxShadow: '0 0 12px rgba(22,119,255,0.4)' } } : n)),
+        nds.map((n) => (n.id === nodeId ? { ...n, style: {} } : n)),
       )
-      setTimeout(() => {
-        setNodes((nds) =>
-          nds.map((n) => (n.id === nodeId ? { ...n, style: {} } : n)),
-        )
-      }, 600)
-    }
-    window.addEventListener('flash-node', handler)
-    return () => window.removeEventListener('flash-node', handler)
+    }, 600)
   }, [setNodes])
+
+  const onFocusNode = useCallback((nodeId: string) => {
+    focusNodeRef.current(nodeId)
+  }, [])
 
   useEffect(() => {
     getCanvasStore().saveCanvasData(activeCanvasId, nodes, edges)
@@ -292,14 +277,14 @@ function App() {
         return (
           <HttpRequestPanel
             nodeId={selectedNode.id}
-            data={selectedNode.data as unknown as HttpRequestNodeData}
+            data={selectedNode.data as HttpRequestNodeData}
           />
         )
       case 'assert':
         return (
           <AssertPanel
             nodeId={selectedNode.id}
-            data={selectedNode.data as unknown as AssertNodeData}
+            data={selectedNode.data as AssertNodeData}
           />
         )
       case 'start':
@@ -324,7 +309,7 @@ function App() {
     const typedNodes = nodes.map((n) => ({
       ...n,
       data: { ...n.data },
-    })) as unknown as CustomNode[]
+    })) as CustomNode[]
 
     let sortedNodes: CustomNode[]
     try {
@@ -440,11 +425,7 @@ function App() {
   }
 
   const handleDeleteNode = (nodeId: string) => {
-    setNodes((nds) => nds.filter((n) => n.id !== nodeId))
-    setEdges((eds) =>
-      eds.filter((e) => e.source !== nodeId && e.target !== nodeId),
-    )
-    getFlowStore().setSelectedNodeId(null)
+    onDeleteNode(nodeId)
     setContextMenu(null)
   }
 
@@ -459,6 +440,7 @@ function App() {
   }
 
   return (
+    <EventBusContext.Provider value={{ deleteEdge: onDeleteEdge, deleteNode: onDeleteNode, flashNode: onFlashNode, focusNode: onFocusNode }}>
     <UpdateNodeContext.Provider value={updateNodeData}>
       <div className="app-container">
         {proxyOnline === false && (
@@ -612,6 +594,7 @@ function App() {
         </div>
       )}
     </UpdateNodeContext.Provider>
+    </EventBusContext.Provider>
   )
 }
 

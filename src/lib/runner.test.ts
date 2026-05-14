@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { isHttpRequest, isAssert } from './runner'
-import type { CustomNode, CustomEdge } from '../types/nodes'
+import type { CustomNode, CustomEdge, VarPort } from '../types/nodes'
+import { proxyFetch } from './proxy'
 
 vi.mock('./proxy', () => ({
   proxyFetch: vi.fn().mockResolvedValue({
@@ -88,7 +89,7 @@ describe('runWorkflow (P0.1 immutable nodes)', () => {
     const edges: CustomEdge[] = [makeEdge('start', '3')]
 
     const startOutOkBefore = start.data.out[0].value
-    const httpInExecBefore = http.data.in[0].value
+    const httpInExecBefore = (http.data.in as VarPort[])[0].value
     const httpOutOkBefore = http.data.out[3].value
 
     const { runWorkflow } = await import('./runner')
@@ -96,7 +97,7 @@ describe('runWorkflow (P0.1 immutable nodes)', () => {
     await runWorkflow([start, http], edges, callback)
 
     expect(start.data.out[0].value).toBe(startOutOkBefore)
-    expect(http.data.in[0].value).toBe(httpInExecBefore)
+    expect((http.data.in as VarPort[])[0].value).toBe(httpInExecBefore)
     expect(http.data.out[3].value).toBe(httpOutOkBefore)
   })
 
@@ -159,5 +160,141 @@ describe('runWorkflow (P0.2 optional sorted parameter)', () => {
     await runWorkflow([start, http], edges, vi.fn())
 
     expect(sortSpy).toHaveBeenCalled()
+  })
+})
+
+describe('runWorkflow (P1.5 branch isolation)', () => {
+  it('independent branch succeeds when another branch fails', async () => {
+    const start = makeStartNode()
+    const httpA = makeHttpNode('a')
+    const httpB = makeHttpNode('b')
+    const edges: CustomEdge[] = [
+      makeEdge('start', 'a'),
+      makeEdge('start', 'b'),
+    ]
+
+    vi.mocked(proxyFetch).mockRejectedValueOnce(new Error('A failed'))
+    vi.mocked(proxyFetch).mockResolvedValueOnce({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: { data: 'b ok' },
+      time: 50,
+    })
+
+    const { runWorkflow } = await import('./runner')
+    const callback = vi.fn()
+    const result = await runWorkflow([start, httpA, httpB], edges, callback)
+
+    expect(result['a']['var-out-ok']).toBe(false)
+    expect(result['b']['var-out-ok']).toBe(true)
+  })
+
+  it('downstream nodes of failed node are skipped', async () => {
+    const start = makeStartNode()
+    const httpA = makeHttpNode('a')
+    const httpB = makeHttpNode('b')
+    const edges: CustomEdge[] = [
+      makeEdge('start', 'a'),
+      makeEdge('a', 'b', 'ok', 'execute'),
+    ]
+
+    vi.mocked(proxyFetch).mockRejectedValueOnce(new Error('A failed'))
+
+    const { runWorkflow } = await import('./runner')
+    const callback = vi.fn()
+    const result = await runWorkflow([start, httpA, httpB], edges, callback)
+
+    expect(result['a']['var-out-ok']).toBe(false)
+    expect(result['b']['var-out-ok']).toBe(false)
+
+    const cCalls = callback.mock.calls.filter(([id]) => id === 'b')
+    expect(cCalls.length).toBeGreaterThan(0)
+    const hasErrorStatus = cCalls.some(([, status]) => status === 'error')
+    expect(hasErrorStatus).toBe(true)
+  })
+
+  it('cascading failure: transitive dependency also skipped', async () => {
+    const start = makeStartNode()
+    const httpA = makeHttpNode('a')
+    const httpB = makeHttpNode('b')
+    const httpC = makeHttpNode('c')
+    const edges: CustomEdge[] = [
+      makeEdge('start', 'a'),
+      makeEdge('a', 'b', 'ok', 'execute'),
+      makeEdge('b', 'c', 'ok', 'execute'),
+    ]
+
+    vi.mocked(proxyFetch).mockRejectedValueOnce(new Error('A failed'))
+
+    const { runWorkflow } = await import('./runner')
+    const callback = vi.fn()
+    const result = await runWorkflow([start, httpA, httpB, httpC], edges, callback)
+
+    expect(result['a']['var-out-ok']).toBe(false)
+    expect(result['b']['var-out-ok']).toBe(false)
+    expect(result['c']['var-out-ok']).toBe(false)
+
+    const bCalls = callback.mock.calls.filter(([id]) => id === 'b')
+    expect(bCalls.some(([, s]) => s === 'error')).toBe(true)
+    const cCalls = callback.mock.calls.filter(([id]) => id === 'c')
+    expect(cCalls.some(([, s]) => s === 'error')).toBe(true)
+  })
+
+  it('data-dependent branch is skipped when upstream fails', async () => {
+    const start = makeStartNode()
+    const httpA = makeHttpNode('a')
+    const httpB = makeHttpNode('b')
+    const edges: CustomEdge[] = [
+      makeEdge('start', 'a'),
+      makeEdge('a', 'b', 'response_body', 'data'),
+    ]
+
+    vi.mocked(proxyFetch).mockRejectedValueOnce(new Error('A failed'))
+
+    const { runWorkflow } = await import('./runner')
+    const callback = vi.fn()
+    const result = await runWorkflow([start, httpA, httpB], edges, callback)
+
+    expect(result['a']['var-out-ok']).toBe(false)
+    expect(result['b']['var-out-ok']).toBe(false)
+  })
+
+  it('all independent nodes complete when one fails', async () => {
+    const start = makeStartNode()
+    const httpA = makeHttpNode('a')
+    const httpB = makeHttpNode('b')
+    const httpC = makeHttpNode('c')
+    const edges: CustomEdge[] = [
+      makeEdge('start', 'a'),
+      makeEdge('start', 'b'),
+      makeEdge('start', 'c'),
+    ]
+
+    vi.mocked(proxyFetch).mockRejectedValueOnce(new Error('A failed'))
+
+    const { runWorkflow } = await import('./runner')
+    const callback = vi.fn()
+    const result = await runWorkflow([start, httpA, httpB, httpC], edges, callback)
+
+    expect(result['a']['var-out-ok']).toBe(false)
+    expect(result['b']['var-out-ok']).toBe(true)
+    expect(result['c']['var-out-ok']).toBe(true)
+  })
+
+  it('failed nodes have error info in callback', async () => {
+    const start = makeStartNode()
+    const httpA = makeHttpNode('a')
+    const edges: CustomEdge[] = [makeEdge('start', 'a')]
+
+    vi.mocked(proxyFetch).mockRejectedValueOnce(new Error('Network error'))
+
+    const { runWorkflow } = await import('./runner')
+    const callback = vi.fn()
+    await runWorkflow([start, httpA], edges, callback)
+
+    const errorCalls = callback.mock.calls.filter(([, status]) => status === 'error')
+    expect(errorCalls.length).toBeGreaterThanOrEqual(1)
+    const [, , data] = errorCalls[0]
+    expect((data as Record<string, unknown>).error).toBeDefined()
   })
 })

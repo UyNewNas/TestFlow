@@ -1,7 +1,7 @@
 import { JSONPath } from 'jsonpath-plus'
 import { proxyFetch } from './proxy'
 import { topologicalSort } from './topological'
-import type { CustomNode, CustomEdge, HttpRequestNodeData, AssertNodeData } from '../types/nodes'
+import type { CustomNode, CustomEdge, HttpRequestNodeData, AssertNodeData, VarPort } from '../types/nodes'
 import { inPortId, outPortId, portIdFromHandle } from '../types/nodes'
 
 export function isHttpRequest(node: CustomNode): node is CustomNode & { data: HttpRequestNodeData } {
@@ -55,7 +55,7 @@ async function executeNode(
 
   if (isAssert(node)) {
     const sourceResponse: Record<string, unknown> = {}
-    for (const p of node.data.in) {
+    for (const p of nodeIn(node.data)) {
       const v = inputValues[inPortId(p.id)] ?? ctx[p.id]
       if (v !== undefined) sourceResponse[p.id] = v
     }
@@ -87,6 +87,13 @@ async function executeNode(
   throw new Error(`未知节点类型：${node.type}`)
 }
 
+function nodeIn(data: CustomNode['data']): VarPort[] {
+  return ((data as Record<string, unknown>).in as VarPort[]) ?? []
+}
+function nodeOut(data: CustomNode['data']): VarPort[] {
+  return ((data as Record<string, unknown>).out as VarPort[]) ?? []
+}
+
 function buildInputMap(edges: CustomEdge[]): Map<string, { source: string; sourceHandle: string }> {
   const map = new Map<string, { source: string; sourceHandle: string }>()
   for (const e of edges) {
@@ -109,6 +116,13 @@ export async function runWorkflow(
   const allPortValues: Record<string, Record<string, unknown>> = {}
   const outputStore = new Map<string, Record<string, unknown>>()
   const edgeMap = buildInputMap(edges)
+  const failedNodeIds = new Set<string>()
+  const reverseEdgeMap = new Map<string, Set<string>>()
+  for (const [key, e] of edgeMap.entries()) {
+    const targetNodeId = key.split('::')[0]
+    if (!reverseEdgeMap.has(targetNodeId)) reverseEdgeMap.set(targetNodeId, new Set())
+    reverseEdgeMap.get(targetNodeId)!.add(e.source)
+  }
 
   for (const node of sortedNodes) {
     if (stopAt && node.id === stopAt) break
@@ -126,13 +140,34 @@ export async function runWorkflow(
     }
 
     if (!shouldRun) {
-      for (const p of node.data.out ?? []) {
-        if (p.id === 'ok') p.value = false
+        const outValues: Record<string, unknown> = { [outPortId('ok')]: false }
+        outputStore.set(node.id, outValues)
+        allPortValues[node.id] = outValues
+        for (const p of nodeOut(node.data)) {
+          p.value = outValues[outPortId(p.id)]
+          if (p.id === 'ok') p.value = false
+        }
+        callback(node.id, 'error', { error: '前置节点输出为 false' })
+        continue
       }
-      continue
-    }
 
     callback(node.id, 'running')
+
+    const upstreamNodes = reverseEdgeMap.get(node.id)
+    if (upstreamNodes) {
+      const hasFailedUpstream = [...upstreamNodes].some((uid) => failedNodeIds.has(uid))
+      if (hasFailedUpstream) {
+        failedNodeIds.add(node.id)
+        const outValues: Record<string, unknown> = { [outPortId('ok')]: false }
+        outputStore.set(node.id, outValues)
+        allPortValues[node.id] = outValues
+        for (const p of nodeOut(node.data)) {
+          p.value = outValues[outPortId(p.id)]
+        }
+        callback(node.id, 'error', { error: '上游节点执行失败' })
+        continue
+      }
+    }
 
     const inputValues: Record<string, unknown> = {}
     for (const key of edgeMap.keys()) {
@@ -145,7 +180,7 @@ export async function runWorkflow(
           inputValues[targetHandle] = value
           const pid = portIdFromHandle(targetHandle)
           if (pid) {
-            for (const p of node.data.in ?? []) {
+            for (const p of nodeIn(node.data)) {
               if (p.id === pid) {
                 p.value = value
                 if (p.label && p.label !== p.id) inputValues[p.label] = value
@@ -169,7 +204,7 @@ export async function runWorkflow(
         outValues[outPortId('response_body')] = (result as Record<string, unknown>).responseBody
       } else if (node.type === 'start') {
         outValues[outPortId('ok')] = true
-        for (const p of (node.data.out ?? [])) {
+        for (const p of nodeOut(node.data)) {
           if (p.id !== 'ok' && p.value !== undefined) {
             outValues[outPortId(p.id)] = p.value
           }
@@ -180,7 +215,7 @@ export async function runWorkflow(
 
       outputStore.set(node.id, outValues)
       allPortValues[node.id] = outValues
-      for (const p of node.data.out ?? []) {
+      for (const p of nodeOut(node.data)) {
         p.value = outValues[outPortId(p.id)]
       }
 
@@ -189,11 +224,12 @@ export async function runWorkflow(
       const errMsg = err instanceof Error ? err.message : String(err)
       const outValues: Record<string, unknown> = { [outPortId('ok')]: false }
       outputStore.set(node.id, outValues)
-      for (const p of node.data.out ?? []) {
+      allPortValues[node.id] = outValues
+      for (const p of nodeOut(node.data)) {
         p.value = outValues[outPortId(p.id)]
       }
+      failedNodeIds.add(node.id)
       callback(node.id, 'error', { error: errMsg })
-      break
     }
   }
 

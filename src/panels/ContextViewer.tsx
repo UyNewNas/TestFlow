@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { useFlowStore } from '../store/flowStore'
+import { EventBusContext } from '../store/eventBusContext'
 
 function safeDisplay(v: unknown): string {
   if (v === undefined) return '—'
@@ -16,6 +17,7 @@ function safeDisplay(v: unknown): string {
 export default function ContextViewer() {
   const [collapsed, setCollapsed] = useState(false)
   const portValues = useFlowStore((s) => s.portValues)
+  const bus = useContext(EventBusContext)
 
   const allEntries: { nodeId: string; portId: string; value: unknown }[] = []
   for (const [nodeId, pvs] of Object.entries(portValues)) {
@@ -54,7 +56,7 @@ export default function ContextViewer() {
                 <tbody>
                   {allEntries.map((e) => (
                     <tr key={`${e.nodeId}-${e.portId}`}>
-                      <td className="ctx-key ctx-clickable" onClick={() => window.dispatchEvent(new CustomEvent('focus-node', { bubbles: true, detail: { nodeId: e.nodeId } }))} title="点击定位节点">{e.nodeId}</td>
+                      <td className="ctx-key ctx-clickable" onClick={() => bus?.focusNode(e.nodeId)} title="点击定位节点">{e.nodeId}</td>
                       <td className="ctx-key">{e.portId}</td>
                       <td className="ctx-value" title={safeDisplay(e.value)}>{safeDisplay(e.value)}</td>
                     </tr>

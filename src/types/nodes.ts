@@ -52,6 +52,7 @@ export const ASSERT_DEFAULT_OUT_PORTS: VarPort[] = [OK_OUT]
 // ══════════ Node Data ══════════
 
 export interface HttpRequestNodeData {
+  [key: string]: unknown
   label: string
   type: 'httpRequest'
   request: {
@@ -72,6 +73,7 @@ export interface HttpRequestNodeData {
 }
 
 export interface AssertNodeData {
+  [key: string]: unknown
   label: string
   type: 'assert'
   in: VarPort[]
@@ -98,12 +100,17 @@ export interface AssertDetail {
   message: string
 }
 
-export type CustomNodeData = HttpRequestNodeData | AssertNodeData
+export interface StartNodeData {
+  [key: string]: unknown
+  label: string
+  type: 'start'
+  out: VarPort[]
+}
 
-// ══════════ ReactFlow / Execution ══════════
+export type CustomNodeData = HttpRequestNodeData | AssertNodeData | StartNodeData
 
 export type ExecutionStatus = 'idle' | 'running' | 'success' | 'error'
-export type CustomNode = Node<CustomNodeData & Record<string, unknown>, NodeType>
+export type CustomNode = Node<CustomNodeData, NodeType>
 export type CustomEdge = Edge
 
 // ══════════ WorkflowFile ══════════
@@ -128,5 +135,5 @@ export interface WorkflowNode {
   id: string
   type: 'start' | 'httpRequest' | 'assert'
   position: { x: number; y: number }
-  data: HttpRequestNodeData | AssertNodeData
+  data: CustomNodeData
 }

@@ -1,10 +1,11 @@
-import { memo, useState, useCallback } from 'react'
+import { memo, useState, useCallback, useContext } from 'react'
 import {
   BaseEdge,
   EdgeLabelRenderer,
   getBezierPath,
   type EdgeProps,
 } from '@xyflow/react'
+import { EventBusContext } from '../store/eventBusContext'
 
 function midPoint(t: number, a: number, b: number, c: number, d: number) {
   const u = 1 - t
@@ -32,6 +33,7 @@ export default memo(function CustomEdge({
   style,
 }: EdgeProps) {
   const [hovering, setHovering] = useState(false)
+  const bus = useContext(EventBusContext)
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -53,8 +55,8 @@ export default memo(function CustomEdge({
   const onDelete = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     e.preventDefault()
-    window.dispatchEvent(new CustomEvent('delete-edge', { bubbles: true, detail: { edgeId: id } }))
-  }, [id])
+    bus?.deleteEdge(id)
+  }, [id, bus])
 
   const visible = selected || hovering
   const stroke = selected ? '#1677ff' : '#d9d9d9'
