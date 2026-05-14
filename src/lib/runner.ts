@@ -102,13 +102,15 @@ export async function runWorkflow(
   edges: CustomEdge[],
   callback: StepCallback,
   stopAt?: string,
+  sorted?: CustomNode[],
 ): Promise<Record<string, Record<string, unknown>>> {
-  const sorted = topologicalSort(nodes, edges)
+  const cloned = structuredClone(nodes) as CustomNode[]
+  const sortedNodes = sorted ?? topologicalSort(cloned, edges)
   const allPortValues: Record<string, Record<string, unknown>> = {}
   const outputStore = new Map<string, Record<string, unknown>>()
   const edgeMap = buildInputMap(edges)
 
-  for (const node of sorted) {
+  for (const node of sortedNodes) {
     if (stopAt && node.id === stopAt) break
 
     const execEdge = edgeMap.get(`${node.id}::${inPortId('execute')}`)

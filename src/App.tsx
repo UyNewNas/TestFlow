@@ -326,8 +326,9 @@ function App() {
       data: { ...n.data },
     })) as unknown as CustomNode[]
 
+    let sortedNodes: CustomNode[]
     try {
-      topologicalSort(typedNodes, edges)
+      sortedNodes = topologicalSort(typedNodes, edges)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       setWorkflowError(msg)
@@ -352,7 +353,7 @@ function App() {
           updateNodeData(nodeId, { error: errMsg })
         }
       }
-    }, stopAt)
+    }, stopAt, sortedNodes)
     store.setExecutionTime(Math.round(performance.now() - startTime))
 
     for (const [nodeId, pvs] of Object.entries(portValues)) {

@@ -1,4 +1,5 @@
 const PROXY_BASE = 'http://localhost:58080'
+const DEFAULT_TIMEOUT_MS = 30_000
 
 export async function checkProxy(): Promise<boolean> {
   try {
@@ -13,13 +14,17 @@ export async function checkProxy(): Promise<boolean> {
 
 export async function proxyFetch(
   targetUrl: string,
-  options?: { method?: string; headers?: Record<string, string>; body?: string },
+  options?: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number },
 ): Promise<{ status: number; headers: Record<string, string>; body: unknown; time: number }> {
   const method = options?.method || 'GET'
   const start = performance.now()
+  const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
 
   const url = `${PROXY_BASE}/proxy?target=${encodeURIComponent(targetUrl)}`
-  const init: RequestInit = { method }
+  const init: RequestInit = { method, signal: controller.signal }
 
   if (options?.headers) {
     init.headers = { ...options.headers, 'X-Proxy-Target': targetUrl }
@@ -28,7 +33,13 @@ export async function proxyFetch(
     init.body = options.body
   }
 
-  const res = await fetch(url, init)
+  let res: Response
+  try {
+    res = await fetch(url, init)
+  } finally {
+    clearTimeout(timer)
+  }
+
   const time = Math.round(performance.now() - start)
 
   const resHeaders: Record<string, string> = {}
